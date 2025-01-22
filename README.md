@@ -45,5 +45,5 @@ telnet 192.168.1.4:3306
 ```
 Connection use in any application like, it may vary application wise:
 EX:
-mysql://192.168.1.4:3306/<DB NAME>
+mysql://user:pass@192.168.1.4:3306/<DB NAME>
 ```
