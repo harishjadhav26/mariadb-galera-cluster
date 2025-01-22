@@ -1,0 +1,40 @@
+[mysqld]
+# General Settings
+bind-address=0.0.0.0
+default_storage_engine=InnoDB
+binlog_format=row
+expire_logs_days=1
+innodb_autoinc_lock_mode=2
+
+# Disable Query Cache
+query_cache_size=0
+query_cache_type=0
+
+# InnoDB Performance Optimization
+innodb_flush_log_at_trx_commit=2
+innodb_log_buffer_size=32M
+
+# https://dba.stackexchange.com/questions/130922/error-wsrep-gcs-src-gcs-cppgcs-open1379-failed-to-open-channel-test-clu/131487
+[galera]
+
+# Galera Cluster Configuration
+wsrep_on=ON
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_cluster_address="gcomm://mariadb-1,mariadb-2,mariadb-3" # Replace with the correct node IP or hostname
+wsrep_cluster_name="mariadb-galera-cluster"
+
+# State Snapshot Transfer (SST) Method
+wsrep_sst_method=rsync
+wsrep_slave_threads=2
+
+# Cluster Node Configuration (update these for each node)
+wsrep_node_address="mariadb-2"  # Replace with the correct node IP or hostname
+wsrep_node_name="galera-db-02"  # Replace with a unique name for each node
+
+# https://qiita.com/chaspy/items/baad6947ae0f8b169868
+wsrep_auto_increment_control='ON'
+wsrep_drupal_282555_workaround='ON'
+wsrep_retry_autocommit=10
+
+[client]
+protocol='TCP'

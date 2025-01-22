@@ -1,0 +1,157 @@
+version: "3"
+services: 
+
+ mariadb-1:
+   image: mariadb:latest
+   container_name: mariadb-1
+   hostname: mariadb-1
+   mem_limit: 512m # Adjust Memory as per requirements
+   cpu_shares: 256 # Adjust CPU as per requirements
+   ports:
+    # https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
+    # Standard MariaDB Port (default: 3306) 
+    - 3306:3306
+    # Galera Replication Port (default: 4567) 
+    - 4567:4567
+    # IST Port (default: 4568)
+    - 4568:4568
+    # SST Port (default: 4444)
+    - 4444:4444
+   env_file: .env
+   environment:
+    - MARIADB_USER=${MARIADB_USER_1}
+    - MARIADB_PASSWORD=${MARIADB_PASSWORD_1}
+    - MARIADB_DATABASE=${MARIADB_DATABASE_1}
+    - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+   volumes:
+    - ./mariadb-1/galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf
+   command:
+     --wait_timeout=28800
+     --character-set-server=utf8
+     --collation-server=utf8_general_ci
+     --max-allowed-packet=512M
+     --net-buffer-length=5048576
+     --wsrep-new-cluster
+   cap_add:
+    - all
+   networks:
+    - mariadb-net
+      #  ipv4_address: 192.168.2.2
+   restart: on-failure
+
+ mariadb-2:
+   image: mariadb:latest
+   container_name: mariadb-2
+   hostname: mariadb-2
+   mem_limit: 512m # Adjust Memory as per requirements
+   cpu_shares: 256 # Adjust CPU as per requirements
+   ports:    
+    # https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
+    # Standard MariaDB Port (default: 3306) 
+    - 13306:3306
+    # Galera Replication Port (default: 4567) 
+    - 14567:4567
+    # IST Port (default: 4568)
+    - 14568:4568
+    # SST Port (default: 4444)
+    - 14444:4444
+   env_file: .env   
+   environment:
+    - MARIADB_USER=${MARIADB_USER_2}
+    - MARIADB_PASSWORD=${MARIADB_PASSWORD_2}
+    - MARIADB_DATABASE=${MARIADB_DATABASE_2}
+    - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+   volumes:
+    - ./mariadb-2/galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf
+   command:
+     --wait_timeout=28800
+     --character-set-server=utf8
+     --collation-server=utf8_general_ci
+     --max-allowed-packet=512M
+     --net-buffer-length=5048576    
+   cap_add:
+    - all
+   networks:
+    - mariadb-net
+      #  ipv4_address: 192.168.2.3
+   depends_on:
+     - mariadb-1
+   restart: on-failure
+
+ mariadb-3:
+   image: mariadb:latest
+   container_name: mariadb-3
+   mem_limit: 512m # Adjust Memory as per requirements
+   cpu_shares: 256 # Adjust CPU as per requirements
+   ports:
+    # https://mariadb.com/kb/en/configuring-mariadb-galera-cluster/#network-ports
+    # Standard MariaDB Port (default: 3306) 
+    - 23306:3306
+    # Galera Replication Port (default: 4567) 
+    - 24567:4567
+    # IST Port (default: 4568)
+    - 24568:4568
+    # SST Port (default: 4444)
+    - 24444:4444
+   env_file: .env
+   environment:
+    - MARIADB_USER=${MARIADB_USER_3}
+    - MARIADB_PASSWORD=${MARIADB_PASSWORD_3}
+    - MARIADB_DATABASE=${MARIADB_DATABASE_3}
+    - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}   
+   volumes:
+    - ./mariadb-3/galera.cnf:/etc/mysql/mariadb.conf.d/galera.cnf
+   command:
+     --wait_timeout=28800
+     --character-set-server=utf8
+     --collation-server=utf8_general_ci
+     --max-allowed-packet=512M
+     --net-buffer-length=5048576    
+   cap_add:
+    - all
+   networks:
+    - mariadb-net
+      #  ipv4_address: 192.168.2.4
+   depends_on:
+     - mariadb-1
+     - mariadb-2
+   restart: on-failure
+
+#  proxysql: 
+#    image: proxysql/proxysql:latest
+#    container_name: proxysql
+#    ports:
+#     - "6032:6032"
+#     - "6070:6070"
+#     - "6080:6080"
+#    cap_add:
+#     - all
+#    networks:
+#     - mariadb-net
+#       #  ipv4_address: 192.168.2.7
+
+ haproxy:
+   image: haproxy:3.1-alpine
+   container_name: haproxy
+   volumes:
+    - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+   ports:
+    - "80:80"
+    - "3307:3306"
+    - "8080:8080" # haproxy admin console, login with user:pass (admin:secret)
+   networks:
+    - mariadb-net
+      #  ipv4_address: 192.168.2.8
+   depends_on:
+     - mariadb-1
+     - mariadb-2
+     - mariadb-3      
+   restart: on-failure
+              
+networks:
+  mariadb-net:
+    name: mariadb-net
+    driver: bridge
+    # ipam:
+    #   config:
+    #     - subnet: 192.168.2.0/24
